@@ -15,11 +15,8 @@ public class Server {
     public void listen(int port) {
         try (final var serverSocket = new ServerSocket(9999)) {
             while (true) {
-                try (
-                        final var socket = serverSocket.accept();
-                ) {
-                    executor.execute(new Processor(socket));
-                }
+                final var socket = serverSocket.accept();
+                executor.execute(new Processor(socket));
             }
         } catch (IOException e) {
             e.printStackTrace();
