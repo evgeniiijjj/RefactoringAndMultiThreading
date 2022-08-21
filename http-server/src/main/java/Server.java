@@ -1,17 +1,14 @@
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
 public class Server {
 
-    private List<String> validPaths;
     private ExecutorService executor;
 
-    public Server(List<String> validPaths) {
-        this.validPaths = validPaths;
+    public Server() {
         executor = Executors.newFixedThreadPool(64);
     }
 
@@ -21,7 +18,7 @@ public class Server {
                 try (
                         final var socket = serverSocket.accept();
                 ) {
-                    executor.execute(new Handler(socket, validPaths));
+                    executor.execute(new Processor(socket));
                 }
             }
         } catch (IOException e) {
@@ -29,5 +26,10 @@ public class Server {
         } finally {
             executor.shutdown();
         }
+    }
+
+    public Server addHandler(Method method, String path, Handler handler) {
+        method.addHandler(path, handler);
+        return this;
     }
 }
