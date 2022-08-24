@@ -57,23 +57,24 @@ public class Processor implements Runnable {
         if (requestLine.length != 3) {
             throw new BadRequestException();
         }
-        Method method = null;
+        Method method;
         try {
             method = Method.valueOf(requestLine[0]);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException();
         }
-        String path = requestLine[1];
+        var path = requestLine[1];
         if (!path.startsWith("/")) {
             throw new BadRequestException();
         }
         var index = path.indexOf('?');
-        Map<String, String> requestParams = null;
+        String params = "";
         if (index > -1) {
-            requestParams = parseRequestParams(path);
+            params = path.substring(index + 1);
             path = path.substring(0, index);
         }
-        final String protocol = requestLine[2];
+        var requestParams = parseRequestParams(params);
+        final var protocol = requestLine[2];
         final var requestHeadersDelimiter = new byte[]{'\r', '\n', '\r', '\n'};
         final var requestHeadersStart = requestLineEnd + requestLineDelimiter.length;
         final var requestHeadersEnd = indexOf(buffer, requestHeadersDelimiter, requestHeadersStart, read);
@@ -123,7 +124,10 @@ public class Processor implements Runnable {
 
     private Map<String, String> parseRequestParams(String requestParams) {
         Map<String, String> result = new HashMap<>();
-        URLEncodedUtils.parse(requestParams, StandardCharsets.UTF_8).forEach(nameValuePair -> result.put(nameValuePair.getName(), nameValuePair.getValue()));
+        if (!requestParams.isEmpty()) {
+            URLEncodedUtils.parse(requestParams, StandardCharsets.UTF_8)
+                    .forEach(nameValuePair -> result.put(nameValuePair.getName(), nameValuePair.getValue()));
+        }
         return result;
     }
 }
