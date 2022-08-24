@@ -1,3 +1,5 @@
+import interfaces.Handler;
+import util.Method;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.concurrent.ExecutorService;
@@ -6,7 +8,7 @@ import java.util.concurrent.Executors;
 
 public class Server {
 
-    private ExecutorService executor;
+    private final ExecutorService executor;
 
     public Server() {
         executor = Executors.newFixedThreadPool(64);
@@ -14,7 +16,7 @@ public class Server {
 
     public void listen(int port) {
         try (final var serverSocket = new ServerSocket(9999)) {
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
                 final var socket = serverSocket.accept();
                 executor.execute(new Processor(socket));
             }
