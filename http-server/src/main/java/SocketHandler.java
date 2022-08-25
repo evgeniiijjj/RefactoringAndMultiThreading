@@ -1,10 +1,15 @@
 import exceptions.BadRequestException;
+import exceptions.MethodNotAllowedException;
+import org.apache.commons.fileupload.FileUpload;
 import org.apache.hc.core5.net.URLEncodedUtils;
 import util.Method;
 import util.Request;
 import util.ResponseStatus;
 import util.ServerConstants;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -29,6 +34,9 @@ public class SocketHandler implements Runnable {
             } catch (BadRequestException e) {
                 out.write((ResponseStatus.BAD_REQUEST.getResponse()).getBytes());
                 out.flush();
+            } catch (MethodNotAllowedException e) {
+                out.write((ResponseStatus.METHOD_NOT_ALLOWED.getResponse()).getBytes());
+                out.flush();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -41,7 +49,7 @@ public class SocketHandler implements Runnable {
         }
     }
 
-    private Request parseRequest(InputStream in) throws IOException, BadRequestException {
+    private Request parseRequest(InputStream in) throws IOException, BadRequestException, MethodNotAllowedException {
 
         in.mark(ServerConstants.LIMIT.getValue());
         byte[] buffer = new byte[ServerConstants.LIMIT.getValue()];
@@ -59,7 +67,7 @@ public class SocketHandler implements Runnable {
         try {
             method = Method.valueOf(requestLine[0]);
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException();
+            throw new MethodNotAllowedException();
         }
         var path = requestLine[1];
         if (!path.startsWith("/")) {
@@ -96,6 +104,8 @@ public class SocketHandler implements Runnable {
             }
         }
         var requestParams = parseRequestParams(params);
+        FileUpload upload = new FileUpload();
+
         return new Request(method, path, protocol, requestParams, requestHeaders, requestBody);
     }
 

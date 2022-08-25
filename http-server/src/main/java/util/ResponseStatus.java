@@ -6,6 +6,10 @@ public enum ResponseStatus {
             "Content-Length: 0\r\n" +
             "Connection: close\r\n" +
             "\r\n"),
+    METHOD_NOT_ALLOWED ("HTTP/1.1 405 Method not allowed\r\n" +
+            "Content-Length: 0\r\n" +
+            "Connection: close\r\n" +
+            "\r\n"),
     NOT_FOUND ("HTTP/1.1 404 Not Found\r\n" +
             "Content-Length: 0\r\n" +
             "Connection: close\r\n" +
