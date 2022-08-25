@@ -1,4 +1,4 @@
-import interfaces.Handler;
+import interfaces.RequestHandler;
 import util.Method;
 import util.ResponseStatus;
 import java.nio.file.Files;
@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 public class Main {
 
     public static void main(String[] args) {
-        Handler textHandler = (request, responseStream) -> {
+        RequestHandler textRequestHandler = (request, responseStream) -> {
             final var filePath = Path.of(".", "public", request.getPath());
             final var mimeType = Files.probeContentType(filePath);
             final var template = Files.readString(filePath);
@@ -21,7 +21,7 @@ public class Main {
             responseStream.write(content);
             responseStream.flush();
         };
-        Handler fileHandler = (request, responseStream) -> {
+        RequestHandler fileRequestHandler = (request, responseStream) -> {
             final var filePath = Path.of(".", "public", request.getPath());
             final var mimeType = Files.probeContentType(filePath);
             final var length = Files.size(filePath);
@@ -31,18 +31,18 @@ public class Main {
         };
         var server = new Server();
         server
-                .addHandler(Method.GET, "/index.html", textHandler)
-                .addHandler(Method.GET, "/spring.svg", fileHandler)
-                .addHandler(Method.GET, "/spring.png", fileHandler)
-                .addHandler(Method.GET, "/resources.html", textHandler)
-                .addHandler(Method.GET, "/styles.css", textHandler)
-                .addHandler(Method.GET, "/app.js", textHandler)
-                .addHandler(Method.GET, "/links.html", textHandler)
-                .addHandler(Method.GET, "/forms.html", textHandler)
-                .addHandler(Method.GET, "/classic.html", textHandler)
-                .addHandler(Method.GET, "/events.html", textHandler)
-                .addHandler(Method.GET, "/events.js", textHandler)
-                .addHandler(Method.GET, "/default-get.html", textHandler);
+                .addHandler(Method.GET, "/index.html", textRequestHandler)
+                .addHandler(Method.GET, "/spring.svg", fileRequestHandler)
+                .addHandler(Method.GET, "/spring.png", fileRequestHandler)
+                .addHandler(Method.GET, "/resources.html", textRequestHandler)
+                .addHandler(Method.GET, "/styles.css", textRequestHandler)
+                .addHandler(Method.GET, "/app.js", textRequestHandler)
+                .addHandler(Method.GET, "/links.html", textRequestHandler)
+                .addHandler(Method.GET, "/forms.html", textRequestHandler)
+                .addHandler(Method.GET, "/classic.html", textRequestHandler)
+                .addHandler(Method.GET, "/events.html", textRequestHandler)
+                .addHandler(Method.GET, "/events.js", textRequestHandler)
+                .addHandler(Method.GET, "/default-get.html", textRequestHandler);
 
         server.listen(9999);
     }

@@ -7,15 +7,13 @@ import util.ServerConstants;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 
-public class Processor implements Runnable {
+public class SocketHandler implements Runnable {
     private final Socket socket;
 
-    public Processor(Socket socket) {
+    public SocketHandler(Socket socket) {
         this.socket = socket;
     }
 
@@ -28,6 +26,16 @@ public class Processor implements Runnable {
             try {
                 Request request = parseRequest(in);
                 request.getMethod().getHandler(request.getPath()).handle(request, out);
+                for (String name : request.getRequestParams()) {
+                    System.out.print(name + " ");
+                    request.getRequestParam(name).forEach(s -> System.out.print(s + " "));
+                    System.out.println();
+                }
+                for (String name : request.getRequestHeaders()) {
+                    System.out.println(name + " " + request.getRequestHeader(name));
+                }
+                byte[] body = request.getRequestBody();
+                if (body != null) System.out.println(new String(body));
             } catch (BadRequestException e) {
                 out.write((ResponseStatus.BAD_REQUEST.getResponse()).getBytes());
                 out.flush();
@@ -73,7 +81,6 @@ public class Processor implements Runnable {
             params = path.substring(index + 1);
             path = path.substring(0, index);
         }
-        var requestParams = parseRequestParams(params);
         final var protocol = requestLine[2];
         final var requestHeadersDelimiter = new byte[]{'\r', '\n', '\r', '\n'};
         final var requestHeadersStart = requestLineEnd + requestLineDelimiter.length;
@@ -93,8 +100,12 @@ public class Processor implements Runnable {
                 final var length = Integer.parseInt(requestHeaders.get(contentLengthParam));
                 in.skip(requestHeadersDelimiter.length);
                 requestBody = in.readNBytes(length);
+                if (requestHeaders.get("Content-Type").equals("application/x-www-form-urlencoded")) {
+                    params = new String(requestBody);
+                }
             }
         }
+        var requestParams = parseRequestParams(params);
         return new Request(method, path, protocol, requestParams, requestHeaders, requestBody);
     }
 
@@ -118,15 +129,26 @@ public class Processor implements Runnable {
 
     private Map<String, String> parseHeaders(String headers) {
         Map<String, String> result = new HashMap<>();
-        Arrays.asList(headers.split("\r\n")).forEach(s -> result.put(s.substring(0, s.indexOf(": ")), s.substring(s.indexOf(": ") + 2)));
+        Arrays.asList(headers.split("\r\n")).forEach(s -> {
+            String[] pair = s.split(":", 2);
+            result.put(pair[0], pair[1].trim());
+        });
         return result;
     }
 
-    private Map<String, String> parseRequestParams(String requestParams) {
-        Map<String, String> result = new HashMap<>();
+    private Map<String, List<String>> parseRequestParams(String requestParams) {
+        Map<String, List<String>> result = new HashMap<>();
         if (!requestParams.isEmpty()) {
             URLEncodedUtils.parse(requestParams, StandardCharsets.UTF_8)
-                    .forEach(nameValuePair -> result.put(nameValuePair.getName(), nameValuePair.getValue()));
+                    .forEach(nameValuePair -> {
+                        if (result.containsKey(nameValuePair.getName())) {
+                            result.get(nameValuePair.getName()).add(nameValuePair.getValue());
+                        } else {
+                            List<String> list = new LinkedList<>();
+                            list.add(nameValuePair.getValue());
+                            result.put(nameValuePair.getName(), list);
+                        }
+                    });
         }
         return result;
     }

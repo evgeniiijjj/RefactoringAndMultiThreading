@@ -2,7 +2,7 @@ package util;
 
 public enum ResponseStatus {
 
-    BAD_REQUEST ("HTTP/1.1 400 Bad util.Request\r\n" +
+    BAD_REQUEST ("HTTP/1.1 400 Bad Request\r\n" +
             "Content-Length: 0\r\n" +
             "Connection: close\r\n" +
             "\r\n"),
