@@ -26,16 +26,6 @@ public class SocketHandler implements Runnable {
             try {
                 Request request = parseRequest(in);
                 request.getMethod().getHandler(request.getPath()).handle(request, out);
-                for (String name : request.getRequestParams()) {
-                    System.out.print(name + " ");
-                    request.getRequestParam(name).forEach(s -> System.out.print(s + " "));
-                    System.out.println();
-                }
-                for (String name : request.getRequestHeaders()) {
-                    System.out.println(name + " " + request.getRequestHeader(name));
-                }
-                byte[] body = request.getRequestBody();
-                if (body != null) System.out.println(new String(body));
             } catch (BadRequestException e) {
                 out.write((ResponseStatus.BAD_REQUEST.getResponse()).getBytes());
                 out.flush();
