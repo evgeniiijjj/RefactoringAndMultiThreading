@@ -1,3 +1,5 @@
+import interfaces.RequestHandler;
+import util.Method;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.concurrent.ExecutorService;
@@ -16,7 +18,7 @@ public class Server {
         try (final var serverSocket = new ServerSocket(9999)) {
             while (true) {
                 final var socket = serverSocket.accept();
-                executor.execute(new Processor(socket));
+                executor.execute(new SocketHandler(socket));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -25,8 +27,8 @@ public class Server {
         }
     }
 
-    public Server addHandler(Method method, String path, Handler handler) {
-        method.addHandler(path, handler);
+    public Server addHandler(Method method, String path, RequestHandler requestHandler) {
+        method.addHandler(path, requestHandler);
         return this;
     }
 }

@@ -1,13 +1,16 @@
+import interfaces.RequestHandler;
+import util.Method;
+import util.Request;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 
-public class Processor implements Runnable {
+public class SocketHandler implements Runnable {
     private final Socket socket;
 
-    public Processor(Socket socket) {
+    public SocketHandler(Socket socket) {
         this.socket = socket;
     }
 
@@ -27,9 +30,9 @@ public class Processor implements Runnable {
                 return;
             }
 
-            Handler handler = Method.valueOf(parts[0]).getHandler(parts[1]);
+            RequestHandler requestHandler = Method.valueOf(parts[0]).getHandler(parts[1]);
 
-            handler.handle(new Request(parts[1]), out);
+            requestHandler.handle(new Request(parts[1]), out);
 
         } catch (IOException e) {
             e.printStackTrace();
