@@ -18,10 +18,10 @@ public class Main {
                     responseStream.write(content);
                     responseStream.flush();
                 })
-                .addHandler(Method.POST, "/", ((request, responseStream) -> {
+                .addHandler(Method.POST, "/", (request, responseStream) -> {
                     responseStream.write((ResponseStatus.OK.getResponse()).getBytes());
                     responseStream.flush();
-                }));
+                });
 
         server.listen(9999);
     }

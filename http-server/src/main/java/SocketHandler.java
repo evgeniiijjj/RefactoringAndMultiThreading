@@ -95,6 +95,9 @@ public class SocketHandler implements Runnable {
             final var length = Integer.parseInt(requestHeaders.get("Content-Length"));
             in.skip(requestHeadersDelimiter.length);
             requestBody = in.readNBytes(length);
+            if (requestHeaders.get("Content-type").equals("application/x-www-form-urlencoded")) {
+                params = new String(requestBody);
+            }
         }
         var requestParams = parseRequestParams(params);
         return new Request(method, path, protocol, requestParams, requestHeaders, requestBody);
