@@ -30,9 +30,6 @@ public class SocketHandler implements Runnable {
             try {
                 Request request = parseRequest(in);
                 request.getMethod().getHandler(request.getPath()).handle(request, out);
-                for (String header : request.getRequestHeaders()) {
-                    System.out.println(header + " - " + request.getRequestHeader(header));
-                }
             } catch (BadRequestException e) {
                 out.write((ResponseStatus.BAD_REQUEST.getResponse()).getBytes());
                 out.flush();
