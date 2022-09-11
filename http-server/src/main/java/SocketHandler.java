@@ -1,6 +1,5 @@
 import exceptions.BadRequestException;
 import exceptions.MethodNotAllowedException;
-import org.apache.commons.fileupload.FileUpload;
 import org.apache.hc.core5.net.URLEncodedUtils;
 import util.Method;
 import util.Request;
@@ -93,19 +92,11 @@ public class SocketHandler implements Runnable {
         var requestHeaders = parseHeaders(headers);
         byte[] requestBody = null;
         if (method == Method.POST) {
-            String contentLengthParam = "Content-Length";
-            if (requestHeaders.containsKey(contentLengthParam)) {
-                final var length = Integer.parseInt(requestHeaders.get(contentLengthParam));
-                in.skip(requestHeadersDelimiter.length);
-                requestBody = in.readNBytes(length);
-                if (requestHeaders.get("Content-Type").equals("application/x-www-form-urlencoded")) {
-                    params = new String(requestBody);
-                }
-            }
+            final var length = Integer.parseInt(requestHeaders.get("Content-Length"));
+            in.skip(requestHeadersDelimiter.length);
+            requestBody = in.readNBytes(length);
         }
         var requestParams = parseRequestParams(params);
-        FileUpload upload = new FileUpload();
-
         return new Request(method, path, protocol, requestParams, requestHeaders, requestBody);
     }
 

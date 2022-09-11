@@ -27,10 +27,10 @@ public enum ResponseStatus {
     }
 
     public String getResponse(String... strings) {
-        return switch (strings.length) {
-            case 1 -> String.format(response, strings[0]);
-            case 2 -> String.format(response, strings[0], strings[1]);
-            default -> response;
-        };
+        if (strings.length == 2) {
+            return String.format(response, strings[0], strings[1]);
+        } else {
+            return String.format(response.replace("Content-Type: %s\r\n", ""), 0);
+        }
     }
 }
