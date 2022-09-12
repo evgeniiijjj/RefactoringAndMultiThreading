@@ -1,5 +1,9 @@
 import exceptions.BadRequestException;
 import exceptions.MethodNotAllowedException;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUpload;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.hc.core5.net.URLEncodedUtils;
 import util.Method;
 import util.Request;
@@ -37,7 +41,7 @@ public class SocketHandler implements Runnable {
                 out.write((ResponseStatus.METHOD_NOT_ALLOWED.getResponse()).getBytes());
                 out.flush();
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             try {
@@ -48,7 +52,7 @@ public class SocketHandler implements Runnable {
         }
     }
 
-    private Request parseRequest(InputStream in) throws IOException, BadRequestException, MethodNotAllowedException {
+    private Request parseRequest(InputStream in) throws IOException, BadRequestException, MethodNotAllowedException, FileUploadException {
 
         in.mark(ServerConstants.LIMIT.getValue());
         byte[] buffer = new byte[ServerConstants.LIMIT.getValue()];
@@ -90,17 +94,28 @@ public class SocketHandler implements Runnable {
         final var headersBytes = in.readNBytes(requestHeadersEnd - requestHeadersStart);
         String headers = new String(headersBytes);
         var requestHeaders = parseHeaders(headers);
-        byte[] requestBody = null;
+        String charset = StandardCharsets.UTF_8.toString();
+        String contentType = requestHeaders.get("Content-Type");
+        String encoded = contentType;
         if (method == Method.POST) {
+            params = "";
             final var length = Integer.parseInt(requestHeaders.get("Content-Length"));
             in.skip(requestHeadersDelimiter.length);
-            requestBody = in.readNBytes(length);
-            if (("application/x-www-form-urlencoded").equals(requestHeaders.get("Content-Type"))) {
-                params = new String(requestBody);
+            if (contentType.contains("; ")) {
+                String[] contents = contentType.split("; ");
+                encoded = contents[0];
+                if (contentType.contains("charset")) charset = contents[1].split("=")[1];
+            }
+            if (("application/x-www-form-urlencoded").equals(encoded)) {
+                params = new String(in.readNBytes(length));
             }
         }
         var requestParams = parseRequestParams(params);
-        return new Request(method, path, protocol, requestParams, requestHeaders, requestBody);
+        var request = new Request(method, path, protocol, requestParams, requestHeaders, in, charset);
+        if ("multipart/form-data".equals(encoded)) {
+            parseMultipart(request);
+        }
+        return request;
     }
 
     private int indexOf(byte[] buffer, byte[] delimiter, int start, int limit) {
@@ -145,5 +160,16 @@ public class SocketHandler implements Runnable {
                     });
         }
         return result;
+    }
+
+    private void parseMultipart(Request request) throws FileUploadException {
+        var list = new FileUpload(new DiskFileItemFactory()).parseRequest(request);
+        for (FileItem item : list) {
+            if (item.getContentType() == null) {
+                request.putRequestParam(item.getFieldName(), item.getString());
+            } else {
+                request.putFile(item.getName(), item);
+            }
+        }
     }
 }
