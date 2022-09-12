@@ -46,7 +46,7 @@ public class SocketHandler implements Runnable {
                     System.out.println(fileName);
                     System.out.println();
                     InputStream input = item.getInputStream();
-                    System.out.println(new String(stream.readNBytes(input.available())));
+                    System.out.println(new String(input.readNBytes(input.available())));
                 }
             } catch (BadRequestException e) {
                 out.write((ResponseStatus.BAD_REQUEST.getResponse()).getBytes());
