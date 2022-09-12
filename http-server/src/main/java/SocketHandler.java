@@ -34,6 +34,20 @@ public class SocketHandler implements Runnable {
             try {
                 Request request = parseRequest(in);
                 request.getMethod().getHandler(request.getPath()).handle(request, out);
+                for (String param : request.getRequestParams()) {
+                    List<String> values = request.getRequestParam(param);
+                    for (String value : values) {
+                        System.out.println(param + " - " + value);
+                    }
+                }
+                System.out.println();
+                for (String fileName : request.getFilesName()) {
+                    FileItem item = request.getFile(fileName);
+                    System.out.println(fileName);
+                    System.out.println();
+                    InputStream input = item.getInputStream();
+                    System.out.println(new String(stream.readNBytes(input.available())));
+                }
             } catch (BadRequestException e) {
                 out.write((ResponseStatus.BAD_REQUEST.getResponse()).getBytes());
                 out.flush();
@@ -96,23 +110,23 @@ public class SocketHandler implements Runnable {
         var requestHeaders = parseHeaders(headers);
         String charset = StandardCharsets.UTF_8.toString();
         String contentType = requestHeaders.get("Content-Type");
-        String encoded = contentType;
+        String enctype = contentType;
         if (method == Method.POST) {
             params = "";
             final var length = Integer.parseInt(requestHeaders.get("Content-Length"));
             in.skip(requestHeadersDelimiter.length);
             if (contentType.contains("; ")) {
                 String[] contents = contentType.split("; ");
-                encoded = contents[0];
+                enctype = contents[0];
                 if (contentType.contains("charset")) charset = contents[1].split("=")[1];
             }
-            if (("application/x-www-form-urlencoded").equals(encoded)) {
+            if (("application/x-www-form-urlencoded").equals(enctype)) {
                 params = new String(in.readNBytes(length));
             }
         }
         var requestParams = parseRequestParams(params);
         var request = new Request(method, path, protocol, requestParams, requestHeaders, in, charset);
-        if ("multipart/form-data".equals(encoded)) {
+        if ("multipart/form-data".equals(enctype)) {
             parseMultipart(request);
         }
         return request;
