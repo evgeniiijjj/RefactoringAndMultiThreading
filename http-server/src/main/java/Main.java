@@ -1,12 +1,28 @@
-import java.util.List;
+import util.Method;
+import util.ResponseStatus;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 
 public class Main {
 
-    static final List<String> validPaths = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html"
-            , "/styles.css", "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
-
     public static void main(String[] args) {
-        var server = new Server(validPaths);
+        var server = new Server();
+        server
+                .addHandler(Method.GET, "/default-get.html", (request, responseStream) -> {
+                    final var filePath = Path.of(".", "static", request.getPath());
+                    final var mimeType = Files.probeContentType(filePath);
+                    final var template = Files.readString(filePath);
+                    final var content = template.getBytes();
+                    responseStream.write((ResponseStatus.OK.getResponse(mimeType, String.valueOf(content.length))).getBytes());
+                    responseStream.write(content);
+                    responseStream.flush();
+                })
+                .addHandler(Method.POST, "/", (request, responseStream) -> {
+                    responseStream.write((ResponseStatus.OK.getResponse()).getBytes());
+                    responseStream.flush();
+                });
+
         server.listen(9999);
     }
 }
