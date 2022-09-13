@@ -1,33 +1,34 @@
+import interfaces.RequestHandler;
+import util.Method;
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
 public class Server {
 
-    private List<String> validPaths;
-    private ExecutorService executor;
+    private final ExecutorService executor;
 
-    public Server(List<String> validPaths) {
-        this.validPaths = validPaths;
+    public Server() {
         executor = Executors.newFixedThreadPool(64);
     }
 
     public void listen(int port) {
         try (final var serverSocket = new ServerSocket(9999)) {
-            while (true) {
-                try (
-                        final var socket = serverSocket.accept();
-                ) {
-                    executor.execute(new Handler(socket, validPaths));
-                }
+            while (!Thread.currentThread().isInterrupted()) {
+                final var socket = serverSocket.accept();
+                executor.execute(new SocketHandler(socket));
             }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             executor.shutdown();
         }
+    }
+
+    public Server addHandler(Method method, String path, RequestHandler requestHandler) {
+        method.addHandler(path, requestHandler);
+        return this;
     }
 }
